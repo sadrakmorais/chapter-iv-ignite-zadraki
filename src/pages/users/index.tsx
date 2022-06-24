@@ -16,20 +16,23 @@ import {
   useBreakpointValue,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RiAddLine, RiPencilLine } from "react-icons/ri";
 import { Header } from "../../components/Header";
 import { Pagination } from "../../components/Pagination";
 import { Sidebar } from "../../components/Sidebar";
 import { queryClient } from "../../services/queryClient";
 import { api } from "../../services/api";
-import { useUsers } from "../../hooks/useUsers";
+import { getUsers, useUsers } from "../../hooks/useUsers";
+import { GetServerSideProps } from "next";
 
 const TEN_MINUTES = 1000 * 60 * 10;
 
-export default function UserList() {
+export default function UserList({ users }) {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching, error } = useUsers(page);
+  const { data, isLoading, isFetching, error } = useUsers(page, {
+    initialData: users,
+  });
 
   async function handlePrefetchUser(userId: string) {
     await queryClient.prefetchQuery(
@@ -132,7 +135,11 @@ export default function UserList() {
                   ))}
                 </Tbody>
               </Table>
-              <Pagination />
+              <Pagination
+                totalCountOfRegisters={data.totalCount}
+                currentPage={page}
+                onPageChange={setPage}
+              />
             </>
           )}
         </Box>
@@ -140,3 +147,13 @@ export default function UserList() {
     </Box>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  const { users, totalCount } = await getUsers(1);
+
+  return {
+    props: {
+      users,
+    },
+  };
+};
